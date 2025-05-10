@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+.env
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+.npm-global/
+.pnp
+.pnp.js
+.npm
+
+# Build files
+/dist
+/build
+/out
+/.next
+/.nuxt
+/.vuepress/dist
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Project specific
+backend/app/data/mock_jobs.json
+.pytest_cache/
+coverage/
+.coverage
+htmlcov/
+
+# Docker
+.dockerignore
