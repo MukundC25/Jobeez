@@ -11,7 +11,7 @@ import mimetypes
 from urllib.parse import parse_qs, urlparse
 from http import HTTPStatus
 
-PORT = 8765
+PORT = 8766
 UPLOAD_DIR = "uploads"
 
 # Create uploads directory if it doesn't exist
@@ -136,31 +136,31 @@ class JoBeezHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         parsed_url = urlparse(self.path)
         path = parsed_url.path
-        
+
         # Health check endpoint
         if path == '/api/health':
             self._set_headers()
             self.wfile.write(json.dumps({"status": "ok", "message": "Simple backend server is running"}).encode())
             return
-            
+
         # Get jobs endpoint
         elif path == '/api/jobs':
             self._set_headers()
             self.wfile.write(json.dumps(MOCK_DATA["jobs"]).encode())
             return
-            
+
         # Get job matches endpoint
         elif path.startswith('/api/resume/') and path.endswith('/matches'):
             self._set_headers()
             self.wfile.write(json.dumps(MOCK_DATA["job_matches"]).encode())
             return
-            
+
         # Get resume details endpoint
         elif path.startswith('/api/resume/') and not path.endswith('/matches') and not path.endswith('/improvement'):
             self._set_headers()
             self.wfile.write(json.dumps(MOCK_DATA["resume"]).encode())
             return
-            
+
         # Get resume improvement endpoint
         elif path.startswith('/api/resume/') and path.endswith('/improvement'):
             self._set_headers()
@@ -172,7 +172,7 @@ class JoBeezHandler(http.server.SimpleHTTPRequestHandler):
                 ]
             }).encode())
             return
-            
+
         # Default response for unknown endpoints
         else:
             self._set_headers(404)
@@ -181,7 +181,7 @@ class JoBeezHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
-        
+
         # Resume upload endpoint
         if self.path == '/api/resume/upload':
             try:
@@ -193,7 +193,7 @@ class JoBeezHandler(http.server.SimpleHTTPRequestHandler):
                 self._set_headers(500)
                 self.wfile.write(json.dumps({"error": str(e)}).encode())
             return
-            
+
         # Default response for unknown endpoints
         else:
             self._set_headers(404)

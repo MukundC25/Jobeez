@@ -21,10 +21,11 @@ services:
       dockerfile: Dockerfile
     container_name: jobeez-frontend
     ports:
-      - "5200:5173"  # Map container port 5173 to host port 5200
+      - "5200:5200"  # Map container port 5200 to host port 5200
     environment:
       - JOBEEZ_BACKEND_PORT=8000  # Inside container backend uses 8000
-      - JOBEEZ_FRONTEND_PORT=5173  # Inside container frontend uses 5173
+      - JOBEEZ_FRONTEND_PORT=5200  # Inside container frontend uses 5200
+      - VITE_API_BASE_URL=http://backend:8000
     volumes:
       - ./frontend:/app
       - /app/node_modules
