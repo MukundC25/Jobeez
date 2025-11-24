@@ -1,17 +1,47 @@
 version: '3.8'
 
 services:
+  mongodb:
+    image: mongo:7.0
+    container_name: jobeez-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    environment:
+      - MONGO_INITDB_DATABASE=jobeez
+    restart: unless-stopped
+    networks:
+      - jobeez-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     build: ./backend
     container_name: jobeez-backend
     ports:
-      - "8765:8000"  # Map container port 8000 to host port 8765
+      - "9765:9000"  # Map container port 9000 to host port 9765
     environment:
       - JOBEEZ_BACKEND_PORT=8000  # Inside container it uses 8000
       - JOBEEZ_FRONTEND_PORT=5174
+      - MONGODB_URL=mongodb://mongodb:27017
+      - MONGODB_NAME=jobeez
+      - USE_REAL_JOB_API=false
+      - USE_MOCK_JOBS=true
+      - RAPIDAPI_KEY=${RAPIDAPI_KEY:-}
+      - ADZUNA_APP_ID=${ADZUNA_APP_ID:-}
+      - ADZUNA_APP_KEY=${ADZUNA_APP_KEY:-}
     volumes:
       - ./backend:/app
+      - ./uploads:/app/uploads
     restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
     networks:
       - jobeez-network
 
@@ -21,10 +51,10 @@ services:
       dockerfile: Dockerfile
     container_name: jobeez-frontend
     ports:
-      - "5200:5200"  # Map container port 5200 to host port 5200
+      - "6200:6200"  # Map container port 6200 to host port 6200
     environment:
-      - JOBEEZ_BACKEND_PORT=8000  # Inside container backend uses 8000
-      - JOBEEZ_FRONTEND_PORT=5200  # Inside container frontend uses 5200
+      - JOBEEZ_BACKEND_PORT=9000  # Inside container backend uses 9000
+      - JOBEEZ_FRONTEND_PORT=6200  # Inside container frontend uses 6200
       - VITE_API_BASE_URL=http://backend:8000
     volumes:
       - ./frontend:/app
@@ -34,6 +64,12 @@ services:
     restart: unless-stopped
     networks:
       - jobeez-network
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
 
 networks:
   jobeez-network:

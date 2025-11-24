@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Define custom ports to avoid conflicts
-export JOBEEZ_BACKEND_PORT=8765
-export JOBEEZ_FRONTEND_PORT=5200
+# Define custom ports to avoid conflicts with other projects
+export JOBEEZ_BACKEND_PORT=9765
+export JOBEEZ_FRONTEND_PORT=6200
 
 # Check if Docker is installed
 if ! command -v docker &> /dev/null; then

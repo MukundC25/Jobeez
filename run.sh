@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Define custom ports to avoid conflicts
-export JOBEEZ_BACKEND_PORT=8765
-export JOBEEZ_FRONTEND_PORT=5200
+# Define custom ports to avoid conflicts with other projects
+export JOBEEZ_BACKEND_PORT=9765
+export JOBEEZ_FRONTEND_PORT=6200
 
 # Create and activate virtual environment for isolation
 echo "Setting up isolated Python environment..."

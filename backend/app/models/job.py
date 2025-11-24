@@ -1,13 +1,17 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
 from datetime import datetime
 
 class JobSkill(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     name: str
     category: Optional[str] = None  # required, preferred, etc.
     importance: Optional[float] = None  # 0-1 score for skill importance
 
 class JobListing(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: Optional[str] = None
     title: str
     company: str
@@ -25,6 +29,8 @@ class JobListing(BaseModel):
     created_at: datetime = Field(default_factory=datetime.now)
 
 class JobMatch(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     job: JobListing
     match_score: float  # 0-100 percentage match
     matched_skills: List[str] = []

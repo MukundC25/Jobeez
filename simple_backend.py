@@ -11,7 +11,7 @@ import mimetypes
 from urllib.parse import parse_qs, urlparse
 from http import HTTPStatus
 
-PORT = 8766
+PORT = 9765
 UPLOAD_DIR = "uploads"
 
 # Create uploads directory if it doesn't exist
@@ -137,8 +137,22 @@ class JoBeezHandler(http.server.SimpleHTTPRequestHandler):
         parsed_url = urlparse(self.path)
         path = parsed_url.path
 
+        # Root endpoint
+        if path == '/' or path == '':
+            self._set_headers()
+            self.wfile.write(json.dumps({
+                "message": "Welcome to Jobeez API",
+                "version": "1.0.0-simple",
+                "endpoints": {
+                    "health": "/api/health",
+                    "jobs": "/api/jobs",
+                    "upload": "/api/resume/upload"
+                }
+            }).encode())
+            return
+
         # Health check endpoint
-        if path == '/api/health':
+        elif path == '/api/health':
             self._set_headers()
             self.wfile.write(json.dumps({"status": "ok", "message": "Simple backend server is running"}).encode())
             return
@@ -180,18 +194,26 @@ class JoBeezHandler(http.server.SimpleHTTPRequestHandler):
             return
 
     def do_POST(self):
-        content_length = int(self.headers['Content-Length'])
+        content_length = int(self.headers.get('Content-Length', 0))
 
         # Resume upload endpoint
         if self.path == '/api/resume/upload':
             try:
-                # For simplicity, we're not actually processing the file
-                # Just return a success response with a mock resume ID
+                # Read the request body (important to consume it)
+                if content_length > 0:
+                    post_data = self.rfile.read(content_length)
+                
+                # Return success response with mock resume data
                 self._set_headers()
-                self.wfile.write(json.dumps({"id": "mock-resume-123", "message": "Resume uploaded successfully"}).encode())
+                response = {
+                    "id": "mock-resume-123",
+                    "message": "Resume uploaded successfully",
+                    "resume": MOCK_DATA["resume"]
+                }
+                self.wfile.write(json.dumps(response).encode())
             except Exception as e:
                 self._set_headers(500)
-                self.wfile.write(json.dumps({"error": str(e)}).encode())
+                self.wfile.write(json.dumps({"error": str(e), "message": "Upload failed"}).encode())
             return
 
         # Default response for unknown endpoints

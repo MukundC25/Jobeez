@@ -3,19 +3,56 @@ from bs4 import BeautifulSoup
 import json
 from typing import List, Dict, Any, Optional
 import os
+import logging
 from datetime import datetime
 from app.models.job import JobListing, JobSkill
+from app.repositories.job_repository import JobRepository
+from app.services.real_job_scraper import RealJobScraper
+
+logger = logging.getLogger(__name__)
 
 class JobService:
     def __init__(self):
-        # For demo purposes, we'll use mock data
-        # In a real app, you'd connect to APIs or scrape job sites
         self.mock_data_path = os.path.join(os.path.dirname(__file__), "../data/mock_jobs.json")
+        self.job_repository = JobRepository()
+        self.real_job_scraper = RealJobScraper()
+        self.use_real_api = os.getenv("USE_REAL_JOB_API", "false").lower() == "true"
         
     async def get_job_listings(self, limit: int = 50, offset: int = 0) -> List[JobListing]:
-        """Get job listings from mock data or API"""
-        # In a real app, you'd implement API calls or web scraping here
-        # For demo, we'll use mock data
+        """Get job listings from database, real API, or mock data"""
+        # Try to get from database first
+        try:
+            db_jobs = await self.job_repository.list_all(skip=offset, limit=limit)
+            if db_jobs:
+                logger.info(f"Retrieved {len(db_jobs)} jobs from database")
+                return db_jobs
+        except Exception as e:
+            logger.warning(f"Database unavailable: {e}")
+        
+        # If database is empty and real API is enabled, fetch from API
+        if self.use_real_api:
+            try:
+                logger.info("Fetching jobs from real API...")
+                api_jobs = await self.real_job_scraper.search_jobs(
+                    query="software developer",
+                    location="United States",
+                    num_pages=2
+                )
+                
+                if api_jobs:
+                    # Try to store in database for future use
+                    try:
+                        await self.job_repository.create_many(api_jobs)
+                        logger.info(f"Stored {len(api_jobs)} jobs in database")
+                    except Exception as db_error:
+                        logger.warning(f"Could not store jobs in database: {db_error}")
+                    
+                    return api_jobs[offset:offset+limit]
+            except Exception as e:
+                logger.error(f"Error fetching from real API: {e}")
+        
+        # Fallback to mock data
+        logger.info("Using mock job data")
         jobs = self._load_mock_data()
         
         # Apply pagination
@@ -51,6 +88,15 @@ class JobService:
     
     async def get_job_by_id(self, job_id: str) -> Optional[JobListing]:
         """Get a specific job by ID"""
+        # Try database first
+        try:
+            job = await self.job_repository.get_by_id(job_id)
+            if job:
+                return job
+        except Exception as e:
+            logger.warning(f"Database error: {e}")
+        
+        # Fallback to mock data
         jobs = self._load_mock_data()
         
         for job in jobs:
