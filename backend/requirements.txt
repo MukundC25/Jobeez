@@ -1,14 +1,7 @@
 fastapi==0.104.1
 uvicorn==0.23.2
-pydantic==2.5.0  # Updated for compatibility
-pymongo==4.5.0
-motor==3.3.2  # Async MongoDB driver
+pydantic==2.5.0
 python-multipart==0.0.6
-pypdf==3.17.4  # Modern replacement for PyMuPDF
-spacy==3.7.2
-scikit-learn==1.3.2
-sentence-transformers==2.2.2
-beautifulsoup4==4.12.2
-requests==2.31.0
-python-docx==1.1.0
-python-dotenv==1.0.0  # Environment variable management
+PyPDF2==3.0.1
+python-docx==1.2.0
+python-dotenv==1.0.0
