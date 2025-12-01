@@ -46,6 +46,12 @@ export default function UploadPage() {
         body: formData,
       })
 
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Server returned invalid response. Please check backend connection.')
+      }
+
       const data = await response.json()
       
       if (!response.ok) {
@@ -60,6 +66,8 @@ export default function UploadPage() {
         setTimeout(() => {
           router.push('/results')
         }, 1000)
+      } else {
+        throw new Error('No resume data received from server')
       }
       
     } catch (err: any) {

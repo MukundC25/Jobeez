@@ -11,6 +11,8 @@ import os
 import re
 import io
 from collections import Counter
+import httpx
+from typing import Dict
 
 # Configure logging
 logging.basicConfig(
@@ -475,17 +477,68 @@ async def upload_resume(file: UploadFile = File(...)):
         logger.error(f"Error processing resume: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+async def fetch_real_jobs() -> List[JobListing]:
+    """Fetch real jobs from multiple free APIs"""
+    jobs = []
+    
+    try:
+        # Try Remotive API (free, no auth required)
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get("https://remotive.com/api/remote-jobs?limit=20")
+            if response.status_code == 200:
+                data = response.json()
+                for idx, job in enumerate(data.get('jobs', [])[:20]):
+                    # Extract skills from description
+                    description = job.get('description', '')
+                    tags = job.get('tags', [])
+                    
+                    # Common tech skills to look for
+                    tech_skills = ['python', 'javascript', 'java', 'react', 'node', 'aws', 'docker', 'kubernetes']
+                    found_skills = [skill for skill in tech_skills if skill.lower() in description.lower()]
+                    
+                    # Add tags as skills
+                    found_skills.extend([tag.lower() for tag in tags if isinstance(tag, str)])
+                    found_skills = list(set(found_skills))[:10]  # Unique, max 10
+                    
+                    jobs.append(JobListing(
+                        id=f"remote_{idx}_{job.get('id', idx)}",
+                        title=job.get('title', 'Software Developer'),
+                        company=job.get('company_name', 'Tech Company'),
+                        location=job.get('candidate_required_location', 'Remote'),
+                        description=description[:500],  # Limit description length
+                        required_skills=found_skills[:5] if found_skills else ['programming'],
+                        preferred_skills=found_skills[5:] if len(found_skills) > 5 else [],
+                        experience_required=3,
+                        salary_min=job.get('salary_min'),
+                        salary_max=job.get('salary_max')
+                    ))
+    except Exception as e:
+        logger.error(f"Error fetching from Remotive: {e}")
+    
+    # If we got jobs, return them
+    if jobs:
+        logger.info(f"Fetched {len(jobs)} real jobs from Remotive")
+        return jobs
+    
+    # Fallback to mock jobs if API fails
+    logger.warning("Using mock jobs as fallback")
+    return MOCK_JOBS
+
 @app.get("/api/jobs")
 async def get_jobs():
-    """Get all available jobs"""
-    return MOCK_JOBS
+    """Get all available jobs from real APIs"""
+    jobs = await fetch_real_jobs()
+    return jobs
 
 @app.post("/api/jobs/match")
 async def match_jobs(resume: Resume):
-    """Match resume with jobs"""
+    """Match resume with real jobs"""
     try:
+        # Fetch real jobs
+        jobs = await fetch_real_jobs()
+        
         matches = []
-        for job in MOCK_JOBS:
+        for job in jobs:
             match = calculate_job_match(resume, job)
             matches.append(match)
         
